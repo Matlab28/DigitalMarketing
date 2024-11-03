@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Marketing Teacher</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+        body {
+            font-family: 'Poppins', Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            overflow-y: auto;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #333;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            background-color: #222;
+            position: relative;
+            z-index: 2;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            font-weight: 600;
+            background: linear-gradient(45deg, #007bff, #F96b00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+
+        textarea,
+        select,
+        input {
+            width: 100%;
+            padding: 12px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            border: 1px solid #444;
+            background-color: #333;
+            color: #f0f0f0;
+            font-size: 1em;
+            resize: vertical;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: linear-gradient(45deg, #F96b00, #007bff);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 15px;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: linear-gradient(45deg, #007bff, #F96b00);
+        }
+
+        .response {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #007bff;
+            border-radius: 5px;
+            background-color: #222;
+        }
+
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 3;
+            display: none;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #fff;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .blur {
+            filter: blur(5px);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container" id="mainContainer">
+        <h1>Digital Marketing</h1>
+        <form id="teacherForm">
+            <label for="language">Response Language</label>
+            <select id="language" name="language" required>
+                <option value="Azerbaijani">Azerbaijani</option>
+                <option value="English">English</option>
+                <option value="Russian">Russian</option>
+            </select>
+
+            <label for="age">Age</label>
+            <input type="number" id="age" name="age" placeholder="Enter your age" required />
+
+            <label for="aim">Aim for Learning</label>
+            <input type="text" id="aim" name="aim" placeholder="Describe your aim for learning digital marketing"
+                required />
+
+
+            <label for="question">Question</label>
+            <textarea id="question" name="question" placeholder="Enter your question" rows="3" required></textarea>
+
+            <button type="submit">Ask Question</button>
+        </form>
+        <div id="responseContainer" class="response" style="display: none;"></div>
+    </div>
+
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "@google/generative-ai": "https://esm.run/@google/generative-ai"
+        }
+    }
+</script>
+    <script type="module">
+        import { GoogleGenerativeAI } from "@google/generative-ai";
+
+        const API_KEY = "AIzaSyB3GRRnXnOsnRJOhPpLQtWvKf4Bs1Hx-nU";
+
+        const genAI = new GoogleGenerativeAI(API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
+
+        document.getElementById('teacherForm').addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            document.getElementById('loading').style.display = 'flex';
+            document.getElementById('mainContainer').classList.add('blur');
+
+            const language = document.getElementById('language').value;
+            const age = document.getElementById('age').value;
+            const aim = document.getElementById('aim').value;
+            const question = document.getElementById('question').value;
+
+            // const promptMsg = `I am a digital marketing teacher. My student's age is ${age}, they aim to learn digital marketing for ${aim}. Please answer their question in ${language} language: ${question}. Additionally, give the links of external websites or sources, that user can visit and learn more`;
+const promptMsg = `I am a digital marketing teacher. My student's age is ${age}, and they want to learn digital marketing because ${aim}. Please answer their question in ${language} language in the following format:
+
+1. **Answer**: Provide a concise, friendly answer to the question.
+2. **Additional Resources**: List useful external resources for learning more, with links in a readable format. Each resource should be on a new line.
+
+Use clear section headers to make the response easy to read.`;
+
+            try {
+                const result = await model.generateContent(promptMsg);
+                const response = await result.response;
+                const text = await response.text();
+
+                const cleanedText = text.replace(/\*/g, '').trim();
+                displayResponse(cleanedText);
+            } catch (error) {
+                displayResponse('Error: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('mainContainer').classList.remove('blur');
+            }
+        });
+
+        function displayResponse(responseText) {
+    const responseContainer = document.getElementById('responseContainer');
+    responseContainer.style.display = 'block';
+
+    // Format URLs as clickable links
+    const linkifiedText = responseText.replace(
+        /(https?:\/\/[^\s]+)/g,
+        '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+    );
+
+    responseContainer.innerHTML = linkifiedText || 'No response from AI';
+}
+
+    </script>
+
+</body>
+
+</html>
