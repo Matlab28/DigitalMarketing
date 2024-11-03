@@ -78,7 +78,35 @@
             border: 1px solid #007bff;
             border-radius: 5px;
             background-color: #222;
+            text-align: left;
+            /* Align text to the left */
         }
+
+        .response ul {
+            padding-left: 20px;
+            /* Adjust this value to reduce indentation */
+            margin: 0;
+            /* Remove any default margin */
+        }
+
+        .response li {
+            margin-bottom: 5px;
+            /* Add some space between list items if needed */
+        }
+
+        .response a {
+            color: #4a90e2;
+            /* Lighter blue color for links */
+            text-decoration: none;
+            /* Optional: remove underline from links */
+        }
+
+        .response a:hover {
+            text-decoration: underline;
+            /* Optional: underline links on hover for better UX */
+        }
+
+
 
         .loading {
             position: fixed;
@@ -138,7 +166,6 @@
             <input type="text" id="aim" name="aim" placeholder="Describe your aim for learning digital marketing"
                 required />
 
-
             <label for="question">Question</label>
             <textarea id="question" name="question" placeholder="Enter your question" rows="3" required></textarea>
 
@@ -177,13 +204,19 @@
             const aim = document.getElementById('aim').value;
             const question = document.getElementById('question').value;
 
-            // const promptMsg = `I am a digital marketing teacher. My student's age is ${age}, they aim to learn digital marketing for ${aim}. Please answer their question in ${language} language: ${question}. Additionally, give the links of external websites or sources, that user can visit and learn more`;
-const promptMsg = `I am a digital marketing teacher. My student's age is ${age}, and they want to learn digital marketing because ${aim}. Please answer their question in ${language} language in the following format:
+            const promptMsg = `I am a digital marketing teacher. My student's age is ${age}, and they want to learn digital marketing because ${aim}. Please answer their question in ${language} language.
 
-1. **Answer**: Provide a concise, friendly answer to the question.
-2. **Additional Resources**: List useful external resources for learning more, with links in a readable format. Each resource should be on a new line.
+Provide the response in the following format:
 
-Use clear section headers to make the response easy to read.`;
+**Answer**:
+1. Start with a clear, friendly answer to the question.
+2. Organize each main point in separate bullet points for clarity.
+
+**Additional Resources**:
+- Provide relevant links with descriptions (e.g., [Google Digital Garage](https://learndigital.withgoogle.com/digitalgarage)).
+- Limit to 2-3 high-quality resources.
+
+Avoid unnecessary details and keep it concise.`;
 
             try {
                 const result = await model.generateContent(promptMsg);
@@ -201,20 +234,23 @@ Use clear section headers to make the response easy to read.`;
         });
 
         function displayResponse(responseText) {
-    const responseContainer = document.getElementById('responseContainer');
-    responseContainer.style.display = 'block';
+            const responseContainer = document.getElementById('responseContainer');
+            responseContainer.style.display = 'block';
 
-    // Format URLs as clickable links
-    const linkifiedText = responseText.replace(
-        /(https?:\/\/[^\s]+)/g,
-        '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
-    );
+            // Clean up the response by trimming extra whitespace and ensuring proper formatting
+            const formattedText = responseText
+                .trim()  // Remove leading and trailing whitespace
+                .replace(/Answer:/g, "<h3>Answer</h3>")  // Heading for 'Answer' section
+                .replace(/Additional Resources:/g, "<h3>Additional Resources</h3>")  // Heading for 'Additional Resources' section
+                .replace(/^[\*\-]\s+/gm, "<li>")  // Convert bullet points that start with "* " or "- " into list items
+                .replace(/\n/g, "</li><li>")  // Close list item after each line break
+                .replace(/<\/li><li><\/li>/g, "</li>")  // Remove empty list items
+                .replace(/<\/li>(?!<\/ul>)/g, "</li>")  // Ensure there's no extra closing tag
+                .replace(/\[([^\[]+)\]\((https?:\/\/[^\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');  // Convert markdown links to HTML links
 
-    responseContainer.innerHTML = linkifiedText || 'No response from AI';
-}
-
+            responseContainer.innerHTML = `<ul>${formattedText}</ul>`;
+        }
     </script>
-
 </body>
 
 </html>
